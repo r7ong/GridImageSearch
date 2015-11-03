@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.rtong.gridimagesearch.EndlessScrollListener;
 import com.rtong.gridimagesearch.adapters.ImageResultsAdapter;
 import com.rtong.gridimagesearch.models.ImageResult;
 import com.rtong.gridimagesearch.R;
@@ -38,6 +39,34 @@ public class SearchActivity extends AppCompatActivity {
     private String color = "";
     private String type = "";
     private String site = "";
+    private String query = "";
+
+    // Append more data into the adapter
+    public void customLoadMoreDataFromApi(int offset) {
+//        Toast.makeText(SearchActivity.this, "offset="+Integer.toString(offset), Toast.LENGTH_SHORT).show();
+      // This method probably sends out a network request and appends new data items to your adapter.
+      // Use the offset value and add it as a parameter to your API request to retrieve paginated data.
+      // Deserialize API response and then construct new objects to append to the adapter
+        String searchUrl = buildSearchUrl();
+        if(offset > 0){
+            String start = Integer.toString(offset * 8);
+            searchUrl = searchUrl + "&start=" + start;
+        }
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(searchUrl, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                JSONArray imageResultsJson = null;
+                try {
+                    imageResultsJson = response.getJSONObject("responseData").getJSONArray("results");
+                    aImageResults.addAll(ImageResult.fromJSONArray(imageResultsJson));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +92,17 @@ public class SearchActivity extends AppCompatActivity {
 
                 // launch the new activity
                 startActivity(i);
+            }
+        });
+
+        gvResults.setOnScrollListener(new EndlessScrollListener() {
+            @Override
+            public boolean onLoadMore(int page, int totalItemsCount) {
+                // Triggered only when new data needs to be appended to the list
+                // Add whatever code is needed to append new items to your AdapterView
+                customLoadMoreDataFromApi(page);
+                // or customLoadMoreDataFromApi(totalItemsCount);
+                return true; // ONLY if more data is actually being loaded; false otherwise.
             }
         });
     }
@@ -111,11 +151,11 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     public void onImageSearch(View view) {
-        String query = etQuery.getText().toString();
-        Toast.makeText(this, query, Toast.LENGTH_SHORT).show();
+        query = etQuery.getText().toString();
+//        Toast.makeText(this, query, Toast.LENGTH_SHORT).show();
 
         AsyncHttpClient client = new AsyncHttpClient();
-        String searchUrl = buildSearchUrl(query);
+        String searchUrl = buildSearchUrl();
         Log.d("DEBUG", searchUrl);
         client.get(searchUrl, new JsonHttpResponseHandler() {
             @Override
@@ -147,7 +187,7 @@ public class SearchActivity extends AppCompatActivity {
         });
     }
 
-    private String buildSearchUrl(String query) {
+    private String buildSearchUrl() {
         String url = "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" + query + "&rsz=8";
         if(size.length() > 0){
             url += "&imgsz="+size;

@@ -4,8 +4,8 @@
     android:layout_height="match_parent">
 
     <ImageView
-        android:layout_width="75dp"
-        android:layout_height="75dp"
+        android:layout_width="110dp"
+        android:layout_height="110dp"
         android:id="@+id/ivImage"
         android:scaleType="fitXY"
         android:adjustViewBounds="true"
@@ -17,5 +17,7 @@
         android:text="@string/image_title_label"
         android:id="@+id/tvTitle"
         android:maxLines="2"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:textColor="#0092ff"
+        android:textSize="10sp" />
 </LinearLayout>

@@ -1,10 +1,13 @@
 package com.rtong.gridimagesearch.activities;
 
 import android.content.Intent;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -115,9 +118,81 @@ public class SearchActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_search, menu);
-        return true;
+//        getMenuInflater().inflate(R.menu.menu_search, menu);
+//        return true;
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_search, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String searchQuery) {
+                query =searchQuery;
+                // perform query here
+                AsyncHttpClient client = new AsyncHttpClient();
+                String searchUrl = buildSearchUrl();
+                Log.d("DEBUG", searchUrl);
+                client.get(searchUrl, new JsonHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                /*
+                {
+                    responseData: {
+                        results:[
+                            {
+                                url:
+                                title:
+                                tbUrl:
+                            },
+                            {
+                            }
+                        ]
+                }
+                 */
+                        JSONArray imageResultsJson = null;
+                        try {
+                            imageResultsJson = response.getJSONObject("responseData").getJSONArray("results");
+                            imageResults.clear(); // clear the existing images from the array in case where its a new search
+                            // when you make change to the adapter, it does modify the underlying data
+                            aImageResults.addAll(ImageResult.fromJSONArray(imageResultsJson));// why not =
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+        return super.onCreateOptionsMenu(menu);
     }
+    /*
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_book_list, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                // perform query here
+                fetchBooks(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+        return super.onCreateOptionsMenu(menu);
+    }
+     */
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
